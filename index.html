@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>סטודיו מגנטים</title>
+  <meta name="description" content="כלי עבודה לצלמי מגנטים באירועים: מסגרת, בחירה, שיבוץ על A4 והדפסה.">
+  <meta name="theme-color" content="#0f1216">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- ============ Top bar ============ -->
+    <header class="topbar">
+      <div class="brand">
+        <img src="icon.svg" alt="" width="30" height="30">
+        <div>
+          <div class="brand-name">סטודיו מגנטים</div>
+          <div class="brand-sub">מסגרת · בחירה · שיבוץ · הדפסה</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-primary" id="btn-add-photos" data-icon="images">הוסף תמונות</button>
+        <button class="btn" id="btn-add-folder" data-icon="folder">הוסף תיקייה</button>
+        <input type="file" id="input-photos" accept="image/*,.heic,.heif" multiple hidden>
+        <input type="file" id="input-folder" webkitdirectory directory multiple hidden>
+      </div>
+
+      <div class="import-progress" id="import-progress" hidden>
+        <div class="progress"><span id="import-bar"></span></div>
+        <span class="import-label" id="import-label"></span>
+      </div>
+
+      <div class="top-end">
+        <button class="btn btn-ghost" id="btn-clear-all" data-icon="trash">אירוע חדש</button>
+        <button class="btn btn-ghost btn-icon" id="btn-help" title="עזרה וקיצורי מקלדת (?)" aria-label="עזרה" data-icon="help"></button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- ============ Sidebar ============ -->
+      <aside class="sidebar" aria-label="הגדרות">
+        <section class="panel">
+          <h2 class="panel-title"><span class="step">1</span> מסגרת האירוע</h2>
+          <div class="frame-slots">
+            <div class="frame-slot" data-slot="portrait" tabindex="0" role="button" aria-label="טעינת מסגרת אנכית">
+              <div class="frame-thumb"></div>
+              <div class="frame-meta">
+                <strong>מסגרת אנכית</strong>
+                <span class="frame-info">לחץ או גרור PNG</span>
+              </div>
+              <button class="icon-btn frame-remove" title="הסר מסגרת" aria-label="הסר מסגרת" hidden></button>
+            </div>
+            <div class="frame-slot" data-slot="landscape" tabindex="0" role="button" aria-label="טעינת מסגרת אופקית">
+              <div class="frame-thumb"></div>
+              <div class="frame-meta">
+                <strong>מסגרת אופקית</strong>
+                <span class="frame-info">אופציונלי</span>
+              </div>
+              <button class="icon-btn frame-remove" title="הסר מסגרת" aria-label="הסר מסגרת" hidden></button>
+            </div>
+          </div>
+          <p class="hint">מסגרת אחת מספיקה. אם תטען גם גרסה אופקית – כל תמונה תקבל אוטומטית את המסגרת שמתאימה לכיוון שלה. המסגרות נשמרות במחשב לפעם הבאה.</p>
+          <div class="notice notice-warn" id="frame-warning" hidden></div>
+          <input type="file" id="input-frame" accept="image/png,image/webp,image/*" hidden>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title"><span class="step">2</span> גודל המגנט</h2>
+          <div class="segmented" id="mode-seg" role="tablist">
+            <button data-mode="size" role="tab">לפי גודל</button>
+            <button data-mode="count" role="tab">לפי כמות בדף</button>
+          </div>
+
+          <div id="size-mode">
+            <div class="chips" id="preset-chips"></div>
+            <div class="custom-size" id="custom-size">
+              <label>רוחב <input type="number" id="custom-w" min="1" max="20" step="0.1" inputmode="decimal"> ס״מ</label>
+              <span class="times">×</span>
+              <label>גובה <input type="number" id="custom-h" min="1" max="28.7" step="0.1" inputmode="decimal"> ס״מ</label>
+            </div>
+          </div>
+
+          <div id="count-mode" hidden>
+            <div class="chips chips-count" id="count-chips"></div>
+            <p class="hint">המערכת מחשבת את הגודל המקסימלי לפי יחס המסגרת.</p>
+          </div>
+
+          <div class="notice notice-warn" id="ratio-warning" hidden></div>
+
+          <div class="layout-summary">
+            <svg id="page-diagram" viewBox="0 0 210 297" role="img" aria-label="סכמת פריסת הדף"></svg>
+            <div class="layout-facts" id="layout-facts"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title"><span class="step">3</span> הגדרות דף והדפסה</h2>
+          <div class="field-grid">
+            <label class="field">שוליים
+              <span class="input-unit"><input type="number" id="set-margin" min="0" max="30" step="0.5" inputmode="decimal"><em>מ״מ</em></span>
+            </label>
+            <label class="field">רווח בין מגנטים
+              <span class="input-unit"><input type="number" id="set-gap" min="0" max="20" step="0.5" inputmode="decimal"><em>מ״מ</em></span>
+            </label>
+            <label class="field">איכות הדפסה
+              <select id="set-dpi">
+                <option value="200">200 DPI – מהיר</option>
+                <option value="300">300 DPI – מומלץ</option>
+                <option value="400">400 DPI – מקסימלי</option>
+              </select>
+            </label>
+          </div>
+          <label class="switch"><input type="checkbox" id="set-mixed"><span class="track"></span>שיבוץ משולב – ניצול מקסימלי של הדף</label>
+          <label class="switch"><input type="checkbox" id="set-cut"><span class="track"></span>קווי חיתוך עדינים</label>
+          <label class="switch"><input type="checkbox" id="set-autoselect"><span class="track"></span>סמן אוטומטית תמונות חדשות להדפסה</label>
+        </section>
+      </aside>
+
+      <!-- ============ Gallery ============ -->
+      <main class="main" id="main">
+        <div class="toolbar">
+          <div class="segmented filter-seg" id="filter-seg">
+            <button data-filter="all">הכל <b data-count="all">0</b></button>
+            <button data-filter="selected">נבחרו <b data-count="selected">0</b></button>
+            <button data-filter="unselected">לא נבחרו <b data-count="unselected">0</b></button>
+            <button data-filter="unprinted">טרם הודפסו <b data-count="unprinted">0</b></button>
+            <button data-filter="attention" class="seg-attn">לבדיקה <b data-count="attention">0</b></button>
+          </div>
+          <div class="tool-group">
+            <button class="btn btn-sm" id="btn-select-all" title="בחר את כל התמונות המוצגות (Ctrl+A)">בחר הכל</button>
+            <button class="btn btn-sm" id="btn-clear-sel" title="נקה את כל הבחירה">נקה בחירה</button>
+            <button class="btn btn-sm" id="btn-reset-copies" title="קבע עותק אחד לכל התמונות שנבחרו">עותק 1 לכולן</button>
+          </div>
+          <div class="tool-group tool-end">
+            <select id="sort-select" class="select-sm" aria-label="מיון">
+              <option value="name">מיון: שם קובץ</option>
+              <option value="time">מיון: זמן צילום</option>
+              <option value="time-desc">מיון: החדשות קודם</option>
+            </select>
+            <label class="zoom-range" title="גודל תצוגה">
+              <span class="ico-sm" data-icon="images"></span>
+              <input type="range" id="thumb-size" min="130" max="360" step="10" aria-label="גודל תצוגה">
+            </label>
+          </div>
+        </div>
+
+        <div class="gallery-wrap" id="gallery-wrap">
+          <div class="empty-state" id="empty-state">
+            <div class="drop-art" data-icon="upload"></div>
+            <h3>גרור לכאן תמונות או תיקייה מכרטיס הזיכרון</h3>
+            <p>או בחר קבצים – הכל מעובד מקומית במחשב, בלי העלאה לרשת.</p>
+            <div class="empty-actions">
+              <button class="btn btn-primary btn-lg" id="empty-add" data-icon="images">בחר תמונות</button>
+              <button class="btn btn-lg" id="empty-folder" data-icon="folder">בחר תיקייה</button>
+            </div>
+          </div>
+          <div class="filter-empty" id="filter-empty" hidden>אין תמונות שמתאימות לסינון הנוכחי.</div>
+          <div class="gallery" id="gallery" role="listbox" aria-multiselectable="true" aria-label="תמונות האירוע"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ============ Status bar ============ -->
+    <footer class="statusbar">
+      <div class="stat-block" id="stat-main"></div>
+      <div class="fill-block" id="fill-block"></div>
+      <button class="btn btn-primary btn-lg btn-print" id="btn-preview" data-icon="printer" disabled>תצוגה מקדימה והדפסה</button>
+    </footer>
+  </div>
+
+  <!-- ============ Photo editor ============ -->
+  <div class="modal modal-full" id="editor-modal" hidden role="dialog" aria-modal="true" aria-labelledby="editor-title" data-backdrop-close="false">
+    <div class="editor">
+      <div class="editor-head">
+        <div class="editor-title"><strong id="editor-title"></strong><span id="editor-counter"></span></div>
+        <button class="icon-btn" id="editor-close" aria-label="סגור" data-icon="close"></button>
+      </div>
+      <div class="editor-body">
+        <div class="editor-stage" id="editor-stage">
+          <canvas id="editor-canvas"></canvas>
+          <div class="stage-loading" id="editor-loading" hidden><span class="spinner"></span>טוען רזולוציה מלאה…</div>
+          <button class="stage-nav stage-prev" id="editor-prev" aria-label="התמונה הקודמת" data-icon="chevR"></button>
+          <button class="stage-nav stage-next" id="editor-next" aria-label="התמונה הבאה" data-icon="chevL"></button>
+          <div class="stage-hint">גרירה – הזזה · גלגלת / צביטה – זום</div>
+        </div>
+        <div class="editor-panel">
+          <div class="ed-group">
+            <div class="ed-label">הדפסה</div>
+            <div class="ed-print">
+              <button class="btn btn-toggle" id="ed-select" data-icon="check">נבחרה להדפסה</button>
+              <div class="stepper stepper-lg" id="ed-stepper">
+                <button data-act="dec" aria-label="הפחת עותק" data-icon="minus"></button>
+                <output id="ed-copies">0</output>
+                <button data-act="inc" aria-label="הוסף עותק" data-icon="plus"></button>
+              </div>
+            </div>
+          </div>
+          <div class="ed-group">
+            <div class="ed-label">זום <span id="ed-zoom-val">100%</span></div>
+            <div class="ed-row">
+              <button class="icon-btn" id="ed-zoom-out" aria-label="הקטן" data-icon="zoomOut"></button>
+              <input type="range" id="ed-zoom" min="100" max="400" step="1" aria-label="זום">
+              <button class="icon-btn" id="ed-zoom-in" aria-label="הגדל" data-icon="zoomIn"></button>
+            </div>
+          </div>
+          <div class="ed-group">
+            <div class="ed-label">סיבוב ומיקום</div>
+            <div class="ed-row ed-buttons">
+              <button class="btn btn-sm" id="ed-rot-r" data-icon="rotR" title="סובב עם כיוון השעון (R)">90°</button>
+              <button class="btn btn-sm" id="ed-rot-l" data-icon="rotL" title="סובב נגד כיוון השעון (Shift+R)">90°</button>
+              <button class="btn btn-sm" id="ed-center" data-icon="center" title="מרכז">מרכז</button>
+            </div>
+          </div>
+          <div class="ed-group">
+            <div class="ed-label">התאמה למסגרת</div>
+            <div class="segmented" id="ed-fit">
+              <button data-fit="cover">מילוי (חיתוך)</button>
+              <button data-fit="contain">תמונה מלאה</button>
+            </div>
+          </div>
+          <div class="ed-group" id="ed-frame-group">
+            <div class="ed-label">מסגרת לתמונה זו</div>
+            <div class="segmented seg-wrap" id="ed-frame">
+              <button data-frame="auto">אוטומטי</button>
+              <button data-frame="portrait">אנכית</button>
+              <button data-frame="landscape">אופקית</button>
+              <button data-frame="none">ללא</button>
+            </div>
+          </div>
+          <div class="ed-group">
+            <button class="btn btn-ghost btn-block" id="ed-reset" data-icon="reset">איפוס כל השינויים</button>
+          </div>
+          <div class="ed-shortcuts">
+            <kbd>←</kbd><kbd>→</kbd> מעבר בין תמונות · <kbd>רווח</kbd> בחירה · <kbd>R</kbd> סיבוב · <kbd>+</kbd><kbd>−</kbd> זום · <kbd>Esc</kbd> סגירה
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" id="ed-done">סיום</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Print preview ============ -->
+  <div class="modal modal-full" id="preview-modal" hidden role="dialog" aria-modal="true" aria-labelledby="preview-title" data-backdrop-close="false">
+    <div class="preview">
+      <div class="preview-head">
+        <div>
+          <h2 id="preview-title">תצוגה מקדימה להדפסה</h2>
+          <div class="preview-summary" id="preview-summary"></div>
+        </div>
+        <button class="icon-btn" id="preview-close" aria-label="סגור" data-icon="close"></button>
+      </div>
+      <div class="preview-pages" id="preview-pages"></div>
+      <div class="preview-foot">
+        <div class="preview-tips">
+          <strong>בחלון ההדפסה:</strong> גודל נייר A4 · שוליים: ללא · קנה מידה 100% (ללא "התאם לדף") · הפעל "גרפיקת רקע".
+        </div>
+        <div class="preview-progress" id="preview-progress">
+          <div class="progress"><span id="preview-bar"></span></div>
+          <span id="preview-progress-label"></span>
+        </div>
+        <div class="preview-actions">
+          <button class="btn btn-lg" id="preview-back">חזרה לעריכה</button>
+          <button class="btn btn-primary btn-lg" id="preview-print" data-icon="printer" disabled>הפריסה תקינה – הדפס</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Help ============ -->
+  <div class="modal" id="help-modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="dialog dialog-wide">
+      <h3 class="dialog-title" id="help-title">איך עובדים מהר</h3>
+      <div class="dialog-body help-body">
+        <ol class="help-steps">
+          <li><b>טען מסגרת</b> (PNG עם אזור שקוף). אפשר גם גרסה אופקית – כל תמונה תקבל את המתאימה לה.</li>
+          <li><b>גרור את התמונות</b> או את כל התיקייה מהכרטיס. קבצי RAW ו־קבצי מערכת מסוננים אוטומטית.</li>
+          <li><b>בחר תמונות</b> בלחיצה, קבע עותקים עם + / −. תמונה שסומנה "לבדיקה" – כיוונה לא תואם למסגרת, כדאי להציץ.</li>
+          <li><b>עקוב אחרי שורת הסטטוס</b> – היא מראה כמה דפים יידרשו וכמה מקומות פנויים נשארו בדף האחרון.</li>
+          <li><b>תצוגה מקדימה והדפסה</b> – בדוק את הדפים ואשר. אחרי ההדפסה התמונות יסומנו כ"הודפסו".</li>
+        </ol>
+        <h4>קיצורי מקלדת בגלריה</h4>
+        <div class="kbd-table">
+          <div><kbd>רווח</kbd> / <kbd>Enter</kbd></div><div>סימון / ביטול סימון</div>
+          <div><kbd>+</kbd> <kbd>−</kbd></div><div>הוספה / הפחתה של עותק</div>
+          <div><kbd>1</kbd>–<kbd>9</kbd></div><div>קביעת מספר עותקים מדויק</div>
+          <div><kbd>E</kbd> / לחיצה כפולה</div><div>עריכת התמונה (זום, הזזה, סיבוב)</div>
+          <div><kbd>Shift</kbd> + לחיצה</div><div>סימון טווח</div>
+          <div><kbd>Ctrl</kbd>+<kbd>A</kbd></div><div>בחר הכל</div>
+          <div><kbd>Ctrl</kbd>+<kbd>P</kbd></div><div>תצוגה מקדימה והדפסה</div>
+          <div><kbd>Delete</kbd></div><div>הסרת תמונה מהעבודה</div>
+          <div><kbd>חיצים</kbd></div><div>מעבר בין תמונות</div>
+        </div>
+        <h4>טיפים להדפסה מדויקת</h4>
+        <p>בחלון ההדפסה של הדפדפן ודא: נייר A4, שוליים "ללא", קנה מידה 100% ו"גרפיקת רקע" מופעלת. ב־Chrome ההגדרות נשמרות לפעם הבאה.</p>
+      </div>
+      <div class="dialog-actions"><button class="btn btn-primary" id="help-close" data-autofocus>הבנתי</button></div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <div id="print-root" aria-hidden="true"></div>
+
+  <script src="js/ui.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/print.js"></script>
+</body>
+</html>
